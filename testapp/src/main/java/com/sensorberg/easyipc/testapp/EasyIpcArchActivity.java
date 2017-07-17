@@ -27,6 +27,8 @@ public class EasyIpcArchActivity extends LifecycleActivity {
 				.get(IpcViewModel.class)
 				.init(MainService.class, BIND_AUTO_CREATE);
 
+		viewModel.dispatchEvent(new EarlyData("sent from the activity")); // get's queued
+
 		viewModel
 				.getLiveData(Data.class)
 				.observe(ProcessLifecycleOwner.get(), onData);
@@ -36,8 +38,8 @@ public class EasyIpcArchActivity extends LifecycleActivity {
 				.observe(this, onDataList);
 
 		viewModel
-				.getLiveData(ParcelableRectList.class)
-				.observe(this, onRectList);
+				.getLiveData(EarlyData.class)
+				.observe(this, onEarlyData);
 
 	}
 
@@ -60,11 +62,11 @@ public class EasyIpcArchActivity extends LifecycleActivity {
 		}
 	};
 
-	private final Observer<ParcelableRectList> onRectList = new Observer<ParcelableRectList>() {
-		@Override public void onChanged(@Nullable ParcelableRectList rects) {
-			Log.d("EasyIpcArchActivity received rects list %s", rects);
-			if (rects != null) {
-				adapter.add(rects.toString());
+	private final Observer<EarlyData> onEarlyData = new Observer<EarlyData>() {
+		@Override public void onChanged(@Nullable EarlyData earlyData) {
+			Log.d("EasyIpcActivity received %s", earlyData);
+			if (earlyData != null) {
+				adapter.add(earlyData.toString());
 			}
 		}
 	};

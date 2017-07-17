@@ -11,7 +11,7 @@ public final class Log {
 	private Log() { /* */ }
 
 	public static boolean ENABLED = false;
-	private static final String TAG = "IpcTools";
+	private static final String TAG = "EasyIpc";
 	private static final StringBuilder SB = new StringBuilder();
 
 	public static void d(String message, Object... args) {

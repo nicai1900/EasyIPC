@@ -4,9 +4,11 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Parcelable;
 import android.os.RemoteException;
+import android.support.annotation.NonNull;
 
 import com.sensorberg.easyipc.log.Log;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,16 +18,33 @@ import java.util.Set;
 
 public abstract class IpcBase implements IpcConnection {
 
-	private final String TAG = getClass().getName();
+	private static final int DEFAULT_QUEUE_SIZE = 30;
+	private final String TAG = getClass().getSimpleName();
 
+	private final ArrayDeque<Parcelable> queue = new ArrayDeque<>();
 	private Map<String, Set<IpcListener>> listeners = new HashMap<>();
 	private Handler defaultHandler = new Handler(Looper.getMainLooper());
 	private Map<IpcListener, Handler> handlers = new HashMap<>();
 	private List<String> types;
 	private final Object lock = new Object();
+	private final int maxQueueSize;
 
-	void setLocalTypes(List<String> types) {
-		Log.d("%s.setLocalTypes %s", TAG, types);
+	IpcBase() {
+		this(DEFAULT_QUEUE_SIZE);
+	}
+
+	IpcBase(int maxQueueSize) {
+		this.maxQueueSize = maxQueueSize;
+	}
+
+	/**
+	 * ULTRA-VERBOSE method name, I know, it's better like this.
+	 * Makes clear what that is about.
+	 *
+	 * @param types list of types the other process is currently listening to.
+	 */
+	void setTypesThatTheOtherProcessIsListeningTo(List<String> types) {
+		Log.d("%s.typesThatTheOtherProcessIsListeningTo %s", TAG, types);
 		this.types = types;
 	}
 
@@ -34,7 +53,7 @@ public abstract class IpcBase implements IpcConnection {
 	abstract boolean sendEventToOtherProcess(ParcelableEvent event) throws RemoteException;
 
 	@Override
-	public <T extends Parcelable> IpcConnection addListener(Class<T> klazz, IpcListener<T> listener, Handler handler) {
+	public <T extends Parcelable> IpcConnection addListener(@NonNull Class<T> klazz, @NonNull IpcListener<T> listener, Handler handler) {
 		if (handler != null) {
 			handlers.put(listener, handler);
 		}
@@ -43,7 +62,7 @@ public abstract class IpcBase implements IpcConnection {
 	}
 
 	@Override
-	public <T extends Parcelable> IpcConnection addListener(Class<T> klazz, IpcListener<T> listener) {
+	public <T extends Parcelable> IpcConnection addListener(@NonNull Class<T> klazz, @NonNull IpcListener<T> listener) {
 		Set<IpcListener> set = listeners.get(klazz.getCanonicalName());
 		if (set == null) {
 			set = new HashSet<>();
@@ -57,7 +76,7 @@ public abstract class IpcBase implements IpcConnection {
 	}
 
 	@Override
-	public <T extends Parcelable> IpcConnection removeListener(Class<T> klazz, IpcListener<T> listener) {
+	public <T extends Parcelable> IpcConnection removeListener(@NonNull Class<T> klazz, @NonNull IpcListener<T> listener) {
 		Set<IpcListener> set = listeners.get(klazz.getCanonicalName());
 		if (set != null) {
 			synchronized (lock) {
@@ -75,7 +94,9 @@ public abstract class IpcBase implements IpcConnection {
 	final void clearAll() {
 		listeners.clear();
 		handlers.clear();
-		types.clear();
+		if (types != null) {
+			types.clear();
+		}
 	}
 
 	final void updateTypes() {
@@ -86,8 +107,21 @@ public abstract class IpcBase implements IpcConnection {
 		}
 	}
 
-	final boolean sendToOtherProcess(Parcelable event) {
-		Log.d("IpcBase.send(%s)", event.getClass().getCanonicalName());
+	@Override
+	public final boolean dispatchEvent(@NonNull Parcelable event) {
+		if (internalDispatchEvent(event)) {
+			return true;
+		} else {
+			Log.v("%s.queueing event %s", TAG, event);
+			queue.add(event);
+			if (queue.size() > maxQueueSize) {
+				queue.remove();
+			}
+			return false;
+		}
+	}
+
+	private boolean internalDispatchEvent(Parcelable event) {
 		List<String> t = types;
 		if (t != null && t.contains(event.getClass().getCanonicalName())) {
 			try {
@@ -99,8 +133,22 @@ public abstract class IpcBase implements IpcConnection {
 		return false;
 	}
 
+	final void dequeueIfNeeded() {
+		if (!queue.isEmpty()) {
+			Log.v("%s.deque %s events", TAG, queue.size());
+		}
+		while (!queue.isEmpty()) {
+			Parcelable p = queue.peek();
+			if (internalDispatchEvent(p)) {
+				queue.remove();
+			} else {
+				break;
+			}
+		}
+	}
+
 	final void sendToListeners(ParcelableEvent event) {
-		Log.d("%s.receive(%s)", TAG, event.className);
+		Log.v("%s.sendToListeners(%s)", TAG, event.parcelable == null ? event.className : event.parcelable.toString());
 		Set<IpcListener> set = listeners.get(event.className);
 		if (set != null) {
 			for (IpcListener l : set) {

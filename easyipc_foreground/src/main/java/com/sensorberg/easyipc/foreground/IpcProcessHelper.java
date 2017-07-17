@@ -17,15 +17,35 @@ public final class IpcProcessHelper extends IpcActivityHelper {
 		IpcProcessHelper ipc = new IpcProcessHelper(
 				context,
 				new Intent(context, serviceClass),
-				serviceFlags,
-				true);
+				serviceFlags);
 
 		detector.addListener(ipc.listener);
 		return ipc;
 	}
 
-	private IpcProcessHelper(Context context, Intent intent, int flags, boolean autoReconnect) {
-		super(context, intent, flags, autoReconnect);
+	public static IpcProcessHelper install(
+			ForegroundDetector detector,
+			Context context,
+			Class serviceClass,
+			int serviceFlags,
+			int maxQueueSize) {
+
+		IpcProcessHelper ipc = new IpcProcessHelper(
+				context,
+				new Intent(context, serviceClass),
+				serviceFlags,
+				maxQueueSize);
+
+		detector.addListener(ipc.listener);
+		return ipc;
+	}
+
+	private IpcProcessHelper(Context context, Intent intent, int flags) {
+		super(context, intent, flags);
+	}
+
+	private IpcProcessHelper(Context context, Intent intent, int flags, int maxQueueSize) {
+		super(context, intent, flags, maxQueueSize);
 	}
 
 	private final ForegroundDetector.Listener listener = new ForegroundDetector.Listener() {

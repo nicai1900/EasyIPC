@@ -27,6 +27,8 @@ public class EasyIpcActivity extends Activity {
 		ipcConnection = new IpcActivityHelper(this,
 											  new Intent(this, MainService.class),
 											  BIND_AUTO_CREATE);
+
+		ipcConnection.dispatchEvent(new EarlyData("sent from the activity")); // get's queued
 	}
 
 	@Override protected void onStart() {
@@ -34,7 +36,7 @@ public class EasyIpcActivity extends Activity {
 		ipcConnection
 				.addListener(Data.class, onData, uiHandler)
 				.addListener(Data.List.class, onDataList)
-				.addListener(ParcelableRectList.class, onRectList);
+				.addListener(EarlyData.class, onEarlyData);
 		ipcConnection.start();
 	}
 
@@ -62,10 +64,10 @@ public class EasyIpcActivity extends Activity {
 		}
 	};
 
-	private final IpcListener<ParcelableRectList> onRectList = new IpcListener<ParcelableRectList>() {
-		@Override public void onEvent(ParcelableRectList list) {
-			Log.d("EasyIpcActivity received Rect list %s", list);
-			adapter.add(list.toString());
+	private final IpcListener<EarlyData> onEarlyData = new IpcListener<EarlyData>() {
+		@Override public void onEvent(EarlyData earlyData) {
+			Log.d("EasyIpcActivity received %s", earlyData);
+			adapter.add(earlyData.toString());
 		}
 	};
 

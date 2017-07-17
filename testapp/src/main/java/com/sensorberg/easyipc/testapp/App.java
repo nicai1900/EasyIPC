@@ -7,6 +7,10 @@ import com.sensorberg.easyipc.log.Log;
 
 public class App extends Application implements ForegroundDetector.Listener {
 
+	static {
+		com.sensorberg.easyipc.log.Log.ENABLED = BuildConfig.DEBUG;
+	}
+
 	@Override public void onCreate() {
 		super.onCreate();
 		ForegroundDetector detector = ForegroundDetector.install(this);

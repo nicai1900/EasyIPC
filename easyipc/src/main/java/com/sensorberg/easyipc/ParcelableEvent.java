@@ -5,8 +5,8 @@ import android.os.Parcelable;
 
 public class ParcelableEvent implements Parcelable {
 
+	private final Class klazz;
 	final String className;
-	final Class klazz;
 	final Parcelable parcelable;
 
 	public ParcelableEvent(Parcelable event) {

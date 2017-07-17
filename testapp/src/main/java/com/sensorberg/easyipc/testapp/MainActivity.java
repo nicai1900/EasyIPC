@@ -7,10 +7,6 @@ import android.view.View;
 
 public class MainActivity extends Activity {
 
-	static {
-		com.sensorberg.easyipc.log.Log.ENABLED = true;
-	}
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);

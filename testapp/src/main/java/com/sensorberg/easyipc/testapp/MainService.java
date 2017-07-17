@@ -2,31 +2,27 @@ package com.sensorberg.easyipc.testapp;
 
 import android.app.Notification;
 import android.app.NotificationManager;
-import android.graphics.Rect;
 import android.os.Handler;
-import android.util.Log;
 
 import com.sensorberg.easyipc.IpcListener;
 import com.sensorberg.easyipc.IpcService;
-
-import java.util.Random;
+import com.sensorberg.easyipc.log.Log;
 
 public class MainService extends IpcService implements IpcListener<Data> {
 
-	private static final Random RANDOM = new Random();
-	private static final String CHARS = "1234567890qwertyuiopasdfghjklzxcvbnm ";
-
 	private Handler handler;
-	private StringBuilder sb;
 
 	@Override public void onCreate() {
 		super.onCreate();
-		sb = new StringBuilder();
+
+		dispatchEvent(new EarlyData("sent from the service")); // get's queued
+
 		handler = new Handler();
 		handler.postDelayed(dispatchSingleData, 1333);
 		handler.postDelayed(dispatchListData, 2500);
 
 		addListener(Data.class, this);
+		addListener(EarlyData.class, onEarlyData);
 	}
 
 	@Override public void onDestroy() {
@@ -41,7 +37,7 @@ public class MainService extends IpcService implements IpcListener<Data> {
 				return;
 			}
 			handler.postDelayed(this, 1333);
-			Data d = getRandom();
+			Data d = Data.getRandomData();
 			Log.d("MainService sent", d.toString());
 			dispatchEvent(d);
 		}
@@ -53,29 +49,30 @@ public class MainService extends IpcService implements IpcListener<Data> {
 				return;
 			}
 			handler.postDelayed(this, 2500);
-			ParcelableRectList list = new ParcelableRectList();
-			for (int i = 0; i < 6; i++) {
-				list.add(new Rect(RANDOM.nextInt(255), RANDOM.nextInt(255), RANDOM.nextInt(255), RANDOM.nextInt(255)));
-			}
+			Data.List list = Data.getRandomDataList();
 			Log.d("MainService sent", list.toString());
 			dispatchEvent(list);
 		}
 	};
 
 	@Override public void onEvent(Data event) {
-		Notification.Builder b = new Notification.Builder(this);
-		b.setSmallIcon(R.drawable.ic_notification);
-		b.setContentTitle(event.otherVal);
-		b.setTicker(event.otherVal);
-		b.setContentText(event.val + " - " + event.otherVal);
-		((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).notify(32, b.build());
+		Log.d("MainService received %s", event);
+		notify(event.otherVal, event.val, 2);
 	}
 
-	private Data getRandom() {
-		sb.setLength(0);
-		for (int i = 0; i < 16; i++) {
-			sb.append(CHARS.charAt(RANDOM.nextInt(CHARS.length())));
+	private final IpcListener<EarlyData> onEarlyData = new IpcListener<EarlyData>() {
+		@Override public void onEvent(EarlyData earlyData) {
+			Log.d("MainService received %s", earlyData);
+			MainService.this.notify(earlyData.value, 0, 1);
 		}
-		return new Data(RANDOM.nextInt(), sb.toString());
+	};
+
+	private void notify(String s, int val, int id) {
+		Notification.Builder b = new Notification.Builder(this);
+		b.setSmallIcon(R.drawable.ic_notification);
+		b.setContentTitle(s);
+		b.setTicker(s);
+		b.setContentText(val + " - " + s);
+		((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).notify(id, b.build());
 	}
 }

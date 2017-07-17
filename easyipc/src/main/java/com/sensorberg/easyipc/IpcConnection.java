@@ -2,6 +2,7 @@ package com.sensorberg.easyipc;
 
 import android.os.Handler;
 import android.os.Parcelable;
+import android.support.annotation.NonNull;
 
 public interface IpcConnection {
 
@@ -13,7 +14,7 @@ public interface IpcConnection {
 	 * @param handler  (optional) handler for the thread where events should be dispatched. (default is UI thread)
 	 * @return the same IpcConnection connection object, for chaining calls
 	 */
-	<T extends Parcelable> IpcConnection addListener(Class<T> klazz, IpcListener<T> listener, Handler handler);
+	<T extends Parcelable> IpcConnection addListener(@NonNull Class<T> klazz, @NonNull IpcListener<T> listener, Handler handler);
 
 	/**
 	 * Adds a listener to this IPC-bus. Calls will be made on the UI thread
@@ -22,7 +23,7 @@ public interface IpcConnection {
 	 * @param listener the listener to receive events of the type of klazz
 	 * @return the same IpcConnection connection object, for chaining calls
 	 */
-	<T extends Parcelable> IpcConnection addListener(Class<T> klazz, IpcListener<T> listener);
+	<T extends Parcelable> IpcConnection addListener(@NonNull Class<T> klazz, @NonNull IpcListener<T> listener);
 
 	/**
 	 * Remove a listener from this IPC-bus.
@@ -31,7 +32,7 @@ public interface IpcConnection {
 	 * @param listener the listener to be removed
 	 * @return the same IpcConnection connection object, for chaining calls
 	 */
-	<T extends Parcelable> IpcConnection removeListener(Class<T> klazz, IpcListener<T> listener);
+	<T extends Parcelable> IpcConnection removeListener(@NonNull Class<T> klazz, @NonNull IpcListener<T> listener);
 
 	/**
 	 * Sends the object to the other process
@@ -39,7 +40,7 @@ public interface IpcConnection {
 	 * @param parcelable object to be sent.
 	 * @return true, if successful, false otherwise.
 	 */
-	boolean dispatchEvent(Parcelable parcelable);
+	boolean dispatchEvent(@NonNull Parcelable parcelable);
 
 	/**
 	 * If this IPC connection is alive.

@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
-import android.os.Parcelable;
 import android.os.RemoteException;
 
 import com.sensorberg.easyipc.log.Log;
@@ -20,7 +19,6 @@ public class IpcActivityHelper extends IpcBase {
 	private final Intent intent;
 	private final Context context;
 	private final int flags;
-	private final boolean autoReconnect;
 	private final List<ConnectionListener> listeners = new ArrayList<>();
 
 	private boolean isStarted = false;
@@ -28,14 +26,17 @@ public class IpcActivityHelper extends IpcBase {
 	private ISender outgoing;
 
 	public IpcActivityHelper(Context context, Intent intent, int flags) {
-		this(context, intent, flags, true);
-	}
-
-	public IpcActivityHelper(Context context, Intent intent, int flags, boolean autoReconnect) {
+		super();
 		this.context = context;
 		this.intent = intent;
 		this.flags = flags;
-		this.autoReconnect = autoReconnect;
+	}
+
+	public IpcActivityHelper(Context context, Intent intent, int flags, int maxQueueSize) {
+		super(maxQueueSize);
+		this.context = context;
+		this.intent = intent;
+		this.flags = flags;
 	}
 
 	public void start() {
@@ -58,15 +59,6 @@ public class IpcActivityHelper extends IpcBase {
 			}
 		}
 		context.unbindService(serviceConnection);
-	}
-
-	@Override
-	public boolean dispatchEvent(Parcelable parcelable) {
-		if (isStarted && outgoing != null) {
-			return sendToOtherProcess(parcelable);
-		} else {
-			return false;
-		}
 	}
 
 	@Override
@@ -110,6 +102,7 @@ public class IpcActivityHelper extends IpcBase {
 			try {
 				outgoing.setReceiver(incoming);
 				updateTypes();
+				dequeueIfNeeded();
 			} catch (RemoteException e) {
 				Log.e(e, "%s.onServiceConnected", TAG);
 			}
@@ -132,7 +125,7 @@ public class IpcActivityHelper extends IpcBase {
 				}
 			}
 			outgoing = null;
-			if (autoReconnect && isStarted) {
+			if (isStarted) { // re-bind
 				context.bindService(intent, serviceConnection, flags);
 			}
 		}
@@ -144,7 +137,8 @@ public class IpcActivityHelper extends IpcBase {
 		}
 
 		@Override public void setTypes(List<String> types) throws RemoteException {
-			setLocalTypes(types);
+			setTypesThatTheOtherProcessIsListeningTo(types);
+			dequeueIfNeeded();
 		}
 	};
 
