@@ -1,1 +1,1 @@
-include ':easyipc', ':testapp', ':foregrounddetector', ':log', ':easyipc_arch', ':easyipc_foreground'
+include ':easyipc', ':testapp', ':foregrounddetector', ':log', ':easyipc_arch', ':easyipc_foreground', ':testapp_foreground'

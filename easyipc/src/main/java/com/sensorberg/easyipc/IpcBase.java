@@ -18,10 +18,12 @@ import java.util.Set;
 
 public abstract class IpcBase implements IpcConnection {
 
+	private static final int EVENT_TIMEOUT = 4000;
 	private static final int DEFAULT_QUEUE_SIZE = 30;
 	private final String TAG = getClass().getSimpleName();
 
-	private final ArrayDeque<Parcelable> queue = new ArrayDeque<>();
+	private final Pools.SynchronizedPool<TimeStamped<Parcelable>> timeStampedPool;
+	private final ArrayDeque<TimeStamped<Parcelable>> queue = new ArrayDeque<>();
 	private Map<String, Set<IpcListener>> listeners = new HashMap<>();
 	private Handler defaultHandler = new Handler(Looper.getMainLooper());
 	private Map<IpcListener, Handler> handlers = new HashMap<>();
@@ -35,6 +37,7 @@ public abstract class IpcBase implements IpcConnection {
 
 	IpcBase(int maxQueueSize) {
 		this.maxQueueSize = maxQueueSize;
+		this.timeStampedPool = new Pools.SynchronizedPool<>(maxQueueSize);
 	}
 
 	/**
@@ -44,7 +47,7 @@ public abstract class IpcBase implements IpcConnection {
 	 * @param types list of types the other process is currently listening to.
 	 */
 	void setTypesThatTheOtherProcessIsListeningTo(List<String> types) {
-		Log.d("%s.typesThatTheOtherProcessIsListeningTo %s", TAG, types);
+		Log.d("%s.receivedTypesThatTheOtherProcessIsListeningTo %s", TAG, types);
 		this.types = types;
 	}
 
@@ -112,10 +115,15 @@ public abstract class IpcBase implements IpcConnection {
 		if (internalDispatchEvent(event)) {
 			return true;
 		} else {
-			Log.v("%s.queueing event %s", TAG, event);
-			queue.add(event);
+			Log.v("%s.queueing event (%s)%s", TAG, event.getClass().getCanonicalName(), event);
+
+			TimeStamped<Parcelable> tsp = timeStampedPool.acquire();
+			if (tsp == null) {
+				tsp = new TimeStamped<>();
+			}
+			queue.add(tsp.init(event));
 			if (queue.size() > maxQueueSize) {
-				queue.remove();
+				timeStampedPool.release(queue.remove());
 			}
 			return false;
 		}
@@ -135,14 +143,18 @@ public abstract class IpcBase implements IpcConnection {
 
 	final void dequeueIfNeeded() {
 		if (!queue.isEmpty()) {
-			Log.v("%s.deque %s events", TAG, queue.size());
+			Log.d("%s.deque %s events", TAG, queue.size());
 		}
 		while (!queue.isEmpty()) {
-			Parcelable p = queue.peek();
-			if (internalDispatchEvent(p)) {
-				queue.remove();
-			} else {
-				break;
+			TimeStamped<Parcelable> tsp = queue.peek();
+
+			// if not timed out and dispatch successfully
+			if (tsp.elapsed() <= EVENT_TIMEOUT && internalDispatchEvent(tsp.t) ||
+				// or timed out
+				tsp.elapsed() > EVENT_TIMEOUT) {
+
+				// remove from queue, return to the pool
+				timeStampedPool.release(queue.remove());
 			}
 		}
 	}
@@ -204,6 +216,21 @@ public abstract class IpcBase implements IpcConnection {
 			} else {
 				handler.post(this);
 			}
+		}
+	}
+
+	private static class TimeStamped<T> {
+		private long timestamp;
+		private T t;
+
+		private TimeStamped init(T t) {
+			this.timestamp = System.currentTimeMillis();
+			this.t = t;
+			return this;
+		}
+
+		private long elapsed() {
+			return System.currentTimeMillis() - timestamp;
 		}
 	}
 

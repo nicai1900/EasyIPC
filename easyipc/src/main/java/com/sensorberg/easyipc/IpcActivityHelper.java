@@ -14,7 +14,7 @@ import java.util.List;
 
 public class IpcActivityHelper extends IpcBase {
 
-	private final String TAG = getClass().getName();
+	private final String TAG = getClass().getSimpleName();
 
 	private final Intent intent;
 	private final Context context;
@@ -47,6 +47,7 @@ public class IpcActivityHelper extends IpcBase {
 	public void stop() {
 		isStarted = false;
 		ISender s = outgoing;
+		outgoing = null;
 		if (s != null) {
 			try {
 				s.setReceiver(null);
@@ -143,7 +144,7 @@ public class IpcActivityHelper extends IpcBase {
 	};
 
 	public interface ConnectionListener {
-		void onServiceConnected(IpcActivityHelper ipcActivityHelper);
+		void onServiceConnected(IpcConnection ipcConnection);
 
 		void onServiceDisconnected();
 	}
