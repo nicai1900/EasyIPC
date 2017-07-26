@@ -1,6 +1,7 @@
 package com.sensorberg.easyipc;
 
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Parcelable;
 import android.os.RemoteException;
@@ -20,6 +21,22 @@ public abstract class IpcBase implements IpcConnection {
 
 	private static final int EVENT_TIMEOUT = 4000;
 	private static final int DEFAULT_QUEUE_SIZE = 30;
+
+	private static final HandlerThread BACKGROUND_THREAD;
+	private static Handler BACKGROUND_HANDLER;
+
+	static {
+		BACKGROUND_THREAD = new HandlerThread("IpcBaseBackground", Thread.MIN_PRIORITY);
+		BACKGROUND_THREAD.start();
+	}
+
+	private static synchronized Handler getBackgroundHandler() {
+		if (BACKGROUND_HANDLER == null) {
+			BACKGROUND_HANDLER = new Handler(BACKGROUND_THREAD.getLooper());
+		}
+		return BACKGROUND_HANDLER;
+	}
+
 	private final String TAG = getClass().getSimpleName();
 
 	private final Pools.SynchronizedPool<TimeStamped<Parcelable>> timeStampedPool;
@@ -121,9 +138,11 @@ public abstract class IpcBase implements IpcConnection {
 			if (tsp == null) {
 				tsp = new TimeStamped<>();
 			}
-			queue.add(tsp.init(event));
-			if (queue.size() > maxQueueSize) {
-				timeStampedPool.release(queue.remove());
+			synchronized (queue) {
+				queue.add(tsp.init(event));
+				if (queue.size() > maxQueueSize) {
+					timeStampedPool.release(queue.remove());
+				}
 			}
 			return false;
 		}
@@ -143,19 +162,7 @@ public abstract class IpcBase implements IpcConnection {
 
 	final void dequeueIfNeeded() {
 		if (!queue.isEmpty()) {
-			Log.d("%s.deque %s events", TAG, queue.size());
-		}
-		while (!queue.isEmpty()) {
-			TimeStamped<Parcelable> tsp = queue.peek();
-
-			// if not timed out and dispatch successfully
-			if (tsp.elapsed() <= EVENT_TIMEOUT && internalDispatchEvent(tsp.t) ||
-				// or timed out
-				tsp.elapsed() > EVENT_TIMEOUT) {
-
-				// remove from queue, return to the pool
-				timeStampedPool.release(queue.remove());
-			}
+			getBackgroundHandler().post(dequeRunnable);
 		}
 	}
 
@@ -176,6 +183,30 @@ public abstract class IpcBase implements IpcConnection {
 			}
 		}
 	}
+
+	private final Runnable dequeRunnable = new Runnable() {
+		@Override public void run() {
+			synchronized (queue) {
+				if (!queue.isEmpty()) {
+					Log.d("%s.deque %s events", TAG, queue.size());
+				}
+				while (!queue.isEmpty()) {
+					TimeStamped<Parcelable> tsp = queue.peek();
+
+					// if not timed out and dispatch successfully
+					if (tsp.elapsed() <= EVENT_TIMEOUT && internalDispatchEvent(tsp.t) ||
+						// or timed out
+						tsp.elapsed() > EVENT_TIMEOUT) {
+
+						// remove from queue, return to the pool
+						timeStampedPool.release(queue.remove());
+					}
+				}
+			}
+			// in case other methods also called deque while this was already scheduled
+			getBackgroundHandler().removeCallbacks(dequeRunnable);
+		}
+	};
 
 	private final Pools.SynchronizedPool<EventDispatcher> dispatchers =
 			new Pools.SynchronizedPool<>(50);
