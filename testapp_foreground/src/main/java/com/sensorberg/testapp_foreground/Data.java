@@ -1,4 +1,4 @@
-package com.sensorberg.easyipc.testapp;
+package com.sensorberg.testapp_foreground;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -23,7 +23,7 @@ public class Data implements Parcelable {
 
 	public synchronized static List getRandomDataList() {
 		List l = new List();
-		for (int i = 0; i < 1500; i++) {
+		for (int i = 0; i < 29; i++) {
 			l.add(getRandomData());
 		}
 		return l;

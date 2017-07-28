@@ -28,6 +28,6 @@
 		android:layout_height="wrap_content"
 		android:layout_margin="12dp"
 		android:minHeight="60dp"
-		android:text="tests"/>
+		android:text="Espresso"/>
 
 </LinearLayout>

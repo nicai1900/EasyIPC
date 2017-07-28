@@ -23,7 +23,7 @@ public class Data implements Parcelable {
 
 	public synchronized static List getRandomDataList() {
 		List l = new List();
-		for (int i = 0; i < 1500; i++) {
+		for (int i = 0; i < 6; i++) {
 			l.add(getRandomData());
 		}
 		return l;
@@ -58,7 +58,7 @@ public class Data implements Parcelable {
 	}
 
 	@SuppressWarnings("unused")
-	public static final Creator<Data> CREATOR = new Creator<Data>() {
+	public static final Parcelable.Creator<Data> CREATOR = new Parcelable.Creator<Data>() {
 		@Override
 		public Data createFromParcel(Parcel in) {
 			return new Data(in);
