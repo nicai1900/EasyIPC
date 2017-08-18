@@ -45,6 +45,10 @@ public final class ForegroundDetector {
 		listeners.remove(listener);
 	}
 
+	public boolean isForeground() {
+		return isForeground;
+	}
+
 	private void dispatchApplicationInForeground() {
 		if (isForeground) {
 			return;
