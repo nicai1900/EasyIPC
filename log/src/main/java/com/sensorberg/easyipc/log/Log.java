@@ -65,7 +65,11 @@ public final class Log {
 			break;
 		}
 
-		SB.append(args == null || args.length == 0 ? message : String.format(message, args));
+		try {
+			SB.append(args == null || args.length == 0 ? message : String.format(message, args));
+		} catch (Exception e) {
+			SB.append(message);
+		}
 
 		return SB.toString();
 	}
