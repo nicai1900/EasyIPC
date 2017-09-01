@@ -1,6 +1,8 @@
 # EasyIPC
 Android IPC made painless
 
+[![Build Status](https://www.bitrise.io/app/ef0a07fa36846784/status.svg?token=5VQinpBiD9HnadjRbuj0_g&branch=master)](https://www.bitrise.io/app/ef0a07fa36846784) [ ![Download](https://api.bintray.com/packages/sensorberg/maven/easyipc/images/download.svg) ](https://bintray.com/sensorberg/maven/easyipc/_latestVersion)
+
 ## Core idea
 This library makes IPC (AILD) seems like a type of bus that uses the following 3 simple methods:
 
@@ -94,8 +96,5 @@ compile 'com.sensorberg.easyipc:foregrounddetector:<latest>'   // ForegroundDete
 
 ### Repo
 Currently it's on `maven { url 'https://dl.bintray.com/sensorberg/maven' }`. Soon to be pushed to `jcenter()`
-
-### Latest
-![alt text](https://www.bitrise.io/app/ef0a07fa36846784/status.svg?token=5VQinpBiD9HnadjRbuj0_g&branch=release "Bitrise status")
 
 #### Feedback and Pull-Requests welcomed.
