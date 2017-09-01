@@ -87,14 +87,15 @@ PS.: If you're using `LiveData`, the architecture components have it built-in. J
 
 ## Gradle
 We tried to separate it in many modules as possible, so developers can include just the classes they they really need.
-```Java
+```Groovy
+
+repositories {
+            jcenter()
+}
 compile 'com.sensorberg.easyipc:easyipc:<latest>'              // Core, IpcConnection, Activity n service helpers, etc
 compile 'com.sensorberg.easyipc:arch:<latest>'                 // Android Architectur, IpcLiveData and IpcViewModel
 compile 'com.sensorberg.easyipc:foreground:<latest>'           // IpcProcessHelper
 compile 'com.sensorberg.easyipc:foregrounddetector:<latest>'   // ForegroundDetector
 ```
-
-### Repo
-Currently it's on `maven { url 'https://dl.bintray.com/sensorberg/maven' }`. Soon to be pushed to `jcenter()`
 
 #### Feedback and Pull-Requests welcomed.
