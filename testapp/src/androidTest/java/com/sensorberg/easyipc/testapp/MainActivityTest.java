@@ -25,9 +25,9 @@ public class MainActivityTest {
 			Robot.clickButton();
 			// test Activity0
 			for (int i = 0; i < 5; i++) {
+				Robot.waitABit();
 				Robot.checkText(EspressoActivity0.lastSent);
 				Robot.clickButton();
-				Robot.waitABit();
 			}
 
 			pressBack(); // back

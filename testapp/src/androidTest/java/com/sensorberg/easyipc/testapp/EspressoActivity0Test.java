@@ -17,9 +17,9 @@ public class EspressoActivity0Test {
 	public void espressoActivityTest() {
 
 		for (int i = 0; i < 10; i++) {
+			Robot.waitABit();
 			Robot.checkText(EspressoActivity0.lastSent);
 			Robot.clickButton();
-			Robot.waitABit();
 		}
 	}
 

@@ -22,8 +22,8 @@ public class Robot {
 	}
 
 	public static void waitABit() {
-/*		try {
+		try {
 			Thread.sleep(75);
-		} catch (InterruptedException e) {  }*/
+		} catch (InterruptedException e) {  }
 	}
 }

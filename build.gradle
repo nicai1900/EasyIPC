@@ -2,29 +2,28 @@
 
 buildscript {
     repositories {
+        google()
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.3'
-
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
+        classpath 'com.android.tools.build:gradle:3.0.1'
     }
 }
 
 allprojects {
     repositories {
+        google()
         jcenter()
-        mavenLocal()
+        // mavenLocal()
     }
     version = VERSION_NAME
     group = GROUP
 }
 
 project.ext {
-    project.ext.buildToolsVersion = "25.0.2"
-    project.ext.compileSdkVersion = 25
-    project.ext.targetSdkVersion = 25
+    project.ext.buildToolsVersion = "26.0.2"
+    project.ext.compileSdkVersion = 26
+    project.ext.targetSdkVersion = 26
     project.ext.minSdkVersion = 14
     project.ext.versionName = VERSION_NAME
 }
